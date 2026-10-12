@@ -1,5 +1,8 @@
 node_modules
 dist
+# 環境変数（運営者名・連絡先・広告IDなど）は公開しない。ひな形は .env.example
+.env
+.env.*
+!.env.example
 *.local
-.env.*.local
 .wrangler
