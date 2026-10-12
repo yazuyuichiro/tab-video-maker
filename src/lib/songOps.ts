@@ -35,7 +35,7 @@ export function createEmptySong(measureCount = 16): Song {
     bpm: 120,
     timeSignature: ts,
     height: 250,
-    backgroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
     measuresPerPage: 2,
     measures: Array.from({ length: measureCount }, (_, i) => createMeasure(i + 1, ts)),
   };

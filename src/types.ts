@@ -103,8 +103,8 @@ export const SEGMENT_OPTIONS: Segment[] = [
 ];
 
 export const BACKGROUNDS: { value: BackgroundColor; label: string }[] = [
-  { value: '#000000', label: '黒' },
   { value: '#FFFFFF', label: '白' },
+  { value: '#000000', label: '黒' },
 ];
 
 /** 標準チューニングの開放弦の音高（MIDIノート番号） */

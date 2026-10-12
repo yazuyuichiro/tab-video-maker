@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Song } from '../types';
 import { createEmptySong } from '../lib/songOps';
 import { loadFromStorage, saveToStorage } from '../lib/storage';
-import { createDemoSong } from '../lib/demo';
 
 const HISTORY_LIMIT = 200;
 
@@ -31,7 +30,7 @@ export interface SongStore {
 export function useSongStore(): SongStore {
   const [h, setH] = useState<History>(() => ({
     past: [],
-    present: loadFromStorage() ?? createDemoSong(),
+    present: loadFromStorage() ?? createEmptySong(),
     future: [],
     lastKey: null,
   }));

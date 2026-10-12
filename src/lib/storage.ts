@@ -125,7 +125,8 @@ export function normalizeSong(v: unknown): Song {
     bpm: Math.round(num(o.bpm, base.bpm, 30, 300)),
     timeSignature: ts,
     height: VIDEO_HEIGHTS.includes(height as VideoHeight) ? (height as VideoHeight) : 250,
-    backgroundColor: o.backgroundColor === '#FFFFFF' || o.backgroundColor === '#ffffff' ? '#FFFFFF' : '#000000',
+    // 黒が指定されている時だけ黒、それ以外（未指定・旧形式の緑や青など）は白
+    backgroundColor: typeof o.backgroundColor === 'string' && o.backgroundColor.toUpperCase() === '#000000' ? '#000000' : '#FFFFFF',
     measuresPerPage: Math.round(num(o.measuresPerPage, base.measuresPerPage, 1, 8)),
     measures: measures.length ? measures : base.measures,
   };
