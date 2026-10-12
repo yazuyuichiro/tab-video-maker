@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
+}
+
+input[type='number']::-webkit-inner-spin-button {
+  opacity: 0.4;
+}
