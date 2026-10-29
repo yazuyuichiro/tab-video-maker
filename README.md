@@ -94,6 +94,14 @@ npm run build     # 本番ビルド（dist/ を静的ホスティングに配置
 - `notes[].rest`: 休符、`notes[].chord`: 小節途中のコードチェンジ、`frets` の値 `"x"`: ミュート
 - 設計書初版の形式（`gridSplit` + `position`、`resolution`）のファイルも読み込み時に自動変換されます
 
+## デザイン
+
+3つのサイト（入口ページ・Tab動画メーカー・宅録スタジオ）共通のデザイン「ペダルボード」で作っています。色と文字のルールは、入口ページのリポジトリ（yason-eng-home）の README にまとめています。
+
+- 色とフォントは [src/index.css](src/index.css)。Tailwind の zinc・emerald・amber を共通の色に置き換えています
+- 画面上部の帯（`.faceplate`）がこのアプリの塗装色（緑）です。帯の中のボタンや入力欄は、CSS 変数で塗装面用の色に切り替わります
+- フォントは @fontsource から同梱し、画面を出したあとに読み込みます（[src/fonts.ts](src/fonts.ts)）。vite.config.ts の webFonts で woff2 だけを配信し、Windows に入っている BIZ UD ゴシックを優先します
+
 ## 構成
 
 ```

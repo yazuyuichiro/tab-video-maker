@@ -4,10 +4,10 @@ import { BACKGROUNDS, VIDEO_HEIGHTS, VIDEO_WIDTH } from '../types';
 import type { SongStore } from '../state/useSongStore';
 import { exportSongJson, importSongJson } from '../lib/storage';
 import { setTimeSignature } from '../lib/songOps';
-import { Btn, Label, NumberField } from './ui';
+import { Btn, Label, NumberField, ON_CLS } from './ui';
 
 const TIME_SIGNATURES = ['4/4', '3/4', '2/4', '6/8', '5/4', '12/8'];
-const selectCls = 'rounded-md border border-zinc-700 bg-zinc-950 px-1.5 py-1 text-sm';
+const selectCls = 'rounded-md border border-(--field-line) bg-(--field) px-1.5 py-1 text-sm text-(--field-ink)';
 
 interface Props {
   store: SongStore;
@@ -24,20 +24,21 @@ export function Header({ store, onExport, onHelp }: Props) {
     });
 
   return (
-    <header className="border-b border-zinc-800 bg-zinc-950">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-1.5">
+    <header className="faceplate">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-1.5">
         <div className="flex items-center gap-2">
+          <span className="screws" aria-hidden />
           <svg viewBox="0 0 32 32" className="h-6 w-6 shrink-0">
-            <rect width="32" height="32" rx="6" fill="#18181b" stroke="#52525b" />
+            <rect width="32" height="32" rx="7" fill="#1b1f24" />
             <g stroke="#fff" strokeWidth="1.5">
               <path d="M4 9h24M4 14h24M4 19h24M4 24h24" />
             </g>
             <path d="M12 5v24" stroke="#ff2a2a" strokeWidth="3" />
           </svg>
-          <span className="text-sm font-bold whitespace-nowrap">Tab動画メーカー</span>
+          <span className="font-display text-[15px] whitespace-nowrap">Tab動画メーカー</span>
         </div>
         <input
-          className="w-44 min-w-0 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm"
+          className="w-40 min-w-0 rounded-md border border-(--field-line) bg-(--field) px-2 py-1 text-sm font-bold text-(--field-ink) placeholder:text-(--label)"
           value={song.title}
           placeholder="曲名"
           onChange={(e) => update((d) => void (d.title = e.target.value), 'title')}
@@ -78,11 +79,11 @@ export function Header({ store, onExport, onHelp }: Props) {
               key={b.value}
               type="button"
               onClick={() => set('backgroundColor', b.value)}
-              className={`flex h-7 items-center gap-1 rounded-md border px-1.5 text-xs ${
-                song.backgroundColor === b.value ? 'border-amber-400 ring-1 ring-amber-400' : 'border-zinc-700'
+              className={`flex h-7 items-center gap-1 rounded-md border px-1.5 text-xs font-bold ${
+                song.backgroundColor === b.value ? ON_CLS : 'border-(--btn-line) bg-(--btn) text-(--btn-ink) hover:bg-(--btn-hover)'
               }`}
             >
-              <span className="h-3.5 w-3.5 rounded-sm border border-zinc-500" style={{ background: b.value }} />
+              <span className="h-3.5 w-3.5 rounded-sm border border-black/30" style={{ background: b.value }} />
               {b.label}
             </button>
           ))}

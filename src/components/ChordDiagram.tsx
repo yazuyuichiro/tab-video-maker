@@ -62,7 +62,7 @@ export function ChordDiagram({ frets, baseFret, size = 1 }: { frets: Frets; base
           width={(barreIdx[barreIdx.length - 1] - barreIdx[0]) * gx + 8 * size}
           height={8 * size}
           rx={4 * size}
-          fill="#fbbf24"
+          fill="#f2c230"
         />
       )}
       {values.map((v, i) => {
@@ -80,7 +80,7 @@ export function ChordDiagram({ frets, baseFret, size = 1 }: { frets: Frets; base
         const row = v - baseFret;
         if (row < 0 || row >= rows) return null;
         if (barre && v === minF) return null;
-        return <circle key={i} cx={x} cy={top + row * gy + gy / 2} r={4 * size} fill="#fbbf24" />;
+        return <circle key={i} cx={x} cy={top + row * gy + gy / 2} r={4 * size} fill="#f2c230" />;
       })}
     </svg>
   );

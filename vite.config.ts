@@ -32,10 +32,28 @@ function adsense(client: string | undefined): Plugin {
   };
 }
 
+/**
+ * 同梱フォント（@fontsource）の読み込みを軽くする。
+ * - woff2 だけを使う（今のブラウザはすべて対応しているので、古い woff は配信しない）
+ * - BIZ UD ゴシックは名前に「Web」を付ける。Windows に入っている同じフォントがあればそちらを優先し、ダウンロードしない
+ */
+function webFonts(): Plugin {
+  return {
+    name: 'web-fonts',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!/@fontsource[\\/].+\.css$/.test(id)) return;
+      return code
+        .replace(/,\s*url\([^)]+\.woff\) format\('woff'\)/g, '')
+        .replace(/font-family: 'BIZ (UDP?Gothic)'/g, "font-family: 'BIZ $1 Web'");
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
-    plugins: [react(), tailwindcss(), adsense(env.VITE_ADSENSE_CLIENT || undefined)],
+    plugins: [webFonts(), react(), tailwindcss(), adsense(env.VITE_ADSENSE_CLIENT || undefined)],
     // ffmpeg.wasm はワーカーを new URL(..., import.meta.url) で生成するため事前バンドル対象から外す
     optimizeDeps: {
       exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],

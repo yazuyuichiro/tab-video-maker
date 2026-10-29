@@ -1,10 +1,152 @@
 @import 'tailwindcss';
 
+/*
+ * yason-eng 共通のデザイン「ペダルボード」
+ * 土台はペダルボードの濃いグレー。アプリごとにペダルの塗装色を1色持ち、画面上部の帯（.faceplate）に塗る。
+ * 強い色は塗装面と LED（オン / 録音）だけに使い、それ以外は落ち着いたグレーにする。
+ */
+@theme {
+  /* ボードのグレー（Tailwind の zinc を置き換える） */
+  --color-zinc-50: #f5f6f8;
+  --color-zinc-100: #eceff2;
+  --color-zinc-200: #dfe3e7;
+  --color-zinc-300: #c6ccd2;
+  --color-zinc-400: #9ba5b0;
+  --color-zinc-500: #76808b;
+  --color-zinc-600: #58616c;
+  --color-zinc-700: #3e4650;
+  --color-zinc-800: #30363e;
+  --color-zinc-900: #262b32;
+  --color-zinc-950: #1b1f24;
+
+  /* Tab動画メーカーの塗装色（緑） */
+  --color-emerald-50: #edf8f0;
+  --color-emerald-100: #d3efdb;
+  --color-emerald-200: #a9e0b9;
+  --color-emerald-300: #7fcf98;
+  --color-emerald-400: #5fc181;
+  --color-emerald-500: #45b26b;
+  --color-emerald-600: #379559;
+  --color-emerald-700: #2c7a49;
+  --color-emerald-800: #235f39;
+  --color-emerald-900: #1a472b;
+  --color-emerald-950: #0d2416;
+
+  /* 宅録スタジオの塗装色（黄） */
+  --color-amber-50: #fff9e6;
+  --color-amber-100: #fdefc0;
+  --color-amber-200: #fbe08a;
+  --color-amber-300: #f8d25a;
+  --color-amber-400: #f2c230;
+  --color-amber-500: #d9a816;
+  --color-amber-600: #b0850c;
+  --color-amber-700: #87650c;
+  --color-amber-800: #5f470d;
+  --color-amber-900: #42320c;
+  --color-amber-950: #2a2105;
+
+  /* 文字：本文は BIZ UDPゴシック（Windows には最初から入っている）、数字は等幅の BIZ UDゴシック、見出しは丸ゴシック */
+  --font-sans: 'BIZ UDPGothic', 'BIZ UDPGothic Web', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
+  --font-mono: 'BIZ UDGothic', 'BIZ UDGothic Web', ui-monospace, 'Consolas', monospace;
+  --font-display: 'M PLUS Rounded 1c', 'BIZ UDPGothic', 'BIZ UDPGothic Web', sans-serif;
+}
+
 :root {
   color-scheme: dark;
-  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
+  font-family: var(--font-sans);
+
+  /* このアプリの塗装色 */
+  --pedal: var(--color-emerald-500);
+  --pedal-edge: var(--color-emerald-700);
+  --pedal-ink: var(--color-emerald-950);
+}
+
+/* ボタン・入力欄（暗い面の上）。塗装面の中に出す暗いパネル（.board）も、この設定に戻す */
+:root,
+.board {
+  --btn: var(--color-zinc-800);
+  --btn-hover: var(--color-zinc-700);
+  --btn-line: var(--color-zinc-700);
+  --btn-ink: var(--color-zinc-100);
+  --field: var(--color-zinc-950);
+  --field-line: var(--color-zinc-700);
+  --field-ink: var(--color-zinc-100);
+  --label: var(--color-zinc-400);
+  --primary: var(--pedal);
+  --primary-hover: var(--color-emerald-400);
+  --primary-ink: var(--pedal-ink);
+  /* オンの表示（LED が点いたように、沈んだ暗い面に塗装色の文字） */
+  --on: #121519;
+  --on-ink: var(--pedal);
+  --lcd: #121519;
+  --focus: var(--pedal);
+}
+
+.board {
+  color: var(--color-zinc-100);
+}
+
+/* 画面上部の帯：ペダルの塗装面 */
+.faceplate {
+  background: var(--pedal);
+  color: var(--pedal-ink);
+  border-bottom: 3px solid var(--pedal-edge);
+  --btn: rgb(0 0 0 / 0.12);
+  --btn-hover: rgb(0 0 0 / 0.22);
+  --btn-line: rgb(0 0 0 / 0.18);
+  --btn-ink: var(--pedal-ink);
+  --field: rgb(0 0 0 / 0.12);
+  --field-line: rgb(0 0 0 / 0.22);
+  --field-ink: var(--pedal-ink);
+  --label: color-mix(in srgb, var(--pedal-ink) 72%, transparent);
+  --primary: var(--color-zinc-950);
+  --primary-hover: #000;
+  --primary-ink: #fff;
+  --focus: var(--color-zinc-950);
+}
+
+/* 塗装面のねじ */
+.screws {
+  display: inline-flex;
+  gap: 4px;
+}
+.screws::before,
+.screws::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.3);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+
+/* ドロップダウンの選択肢は、塗装面の上でも暗い面で表示する */
+option {
+  background: var(--color-zinc-900);
+  color: var(--color-zinc-100);
+}
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 
 input[type='number']::-webkit-inner-spin-button {
   opacity: 0.4;
+}
+
+input[type='range'] {
+  accent-color: var(--color-zinc-300);
+}
+.faceplate input[type='range'] {
+  accent-color: var(--color-zinc-950);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
