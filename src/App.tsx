@@ -40,6 +40,7 @@ import { Header } from './components/Header';
 import { Preview, type PlayStart } from './components/Preview';
 import { Editor } from './components/Editor';
 import { ExportDialog } from './components/ExportDialog';
+import { HelpDialog } from './components/HelpDialog';
 import { AdSlot } from './components/AdSlot';
 
 /** 選択範囲（曲頭からの通し tick） */
@@ -98,6 +99,7 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [playStart, setPlayStart] = useState<PlayStart>({ t: 0, id: 0 });
   const [exportOpen, setExportOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const timeRef = useRef(0);
   const digitBuf = useRef<{ t: number; v: number } | null>(null);
   /** Shift+↑↓ で弦を範囲選択する時の起点と先端 */
@@ -353,6 +355,10 @@ export default function App() {
           if (playing) stop();
           setExportOpen(true);
         }}
+        onHelp={() => {
+          if (playing) stop();
+          setHelpOpen(true);
+        }}
       />
       <main className="mx-auto w-full max-w-[1600px] space-y-2 px-4 py-2">
         <Preview
@@ -391,6 +397,7 @@ export default function App() {
         </footer>
       </main>
       {exportOpen && <ExportDialog song={song} onClose={() => setExportOpen(false)} />}
+      {helpOpen && <HelpDialog onClose={() => setHelpOpen(false)} />}
     </div>
   );
 }

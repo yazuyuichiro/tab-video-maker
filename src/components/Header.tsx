@@ -12,9 +12,10 @@ const selectCls = 'rounded-md border border-zinc-700 bg-zinc-950 px-1.5 py-1 tex
 interface Props {
   store: SongStore;
   onExport: () => void;
+  onHelp: () => void;
 }
 
-export function Header({ store, onExport }: Props) {
+export function Header({ store, onExport, onHelp }: Props) {
   const { song, update } = store;
   const fileRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof Song>(key: K, value: Song[K]) =>
@@ -111,10 +112,13 @@ export function Header({ store, onExport }: Props) {
           >
             新規
           </Btn>
-          <Btn onClick={() => fileRef.current?.click()} title="保存したJSONファイルを読み込む">
+          <Btn onClick={onHelp} title="使い方（保存のしかた・基本の流れ・キー操作）">
+            ？ 使い方
+          </Btn>
+          <Btn onClick={() => fileRef.current?.click()} title="「保存」でダウンロードした曲データのファイル（.json）を開きます">
             読込
           </Btn>
-          <Btn onClick={() => exportSongJson(song)} title="曲データをJSONファイルに保存">
+          <Btn onClick={() => exportSongJson(song)} title="曲データをファイル（.json）にして、パソコンにダウンロードします">
             保存
           </Btn>
           <input
