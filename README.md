@@ -19,8 +19,8 @@ npm run build     # 本番ビルド（dist/ を静的ホスティングに配置
 
 | 変数 | 内容 |
 | --- | --- |
-| `VITE_OPERATOR_NAME` | 運営者名（プライバシーポリシーに表示） |
-| `VITE_CONTACT` | お問い合わせ先（同上） |
+| `VITE_OPERATOR_NAME` | 運営者名（プライバシーポリシーに表示。既定: yason） |
+| `VITE_CONTACT` | お問い合わせ先（同上。既定: https://yason-eng.com/contact ） |
 | `VITE_ADSENSE_CLIENT` | AdSense のサイト運営者ID（`ca-pub-…`）。設定すると審査用タグと `ads.txt` を出力 |
 | `VITE_ADSENSE_SLOT` | エディタ下バナーの広告ユニットID |
 

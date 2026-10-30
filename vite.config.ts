@@ -32,6 +32,10 @@ function adsense(client: string | undefined): Plugin {
   };
 }
 
+/** プライバシーポリシーに載せる運営者名とお問い合わせ先（環境変数 VITE_OPERATOR_NAME / VITE_CONTACT で上書きできる） */
+const OPERATOR = 'yason';
+const CONTACT = 'https://yason-eng.com/contact';
+
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 /** お問い合わせ先がメールアドレスか URL ならリンクにする */
@@ -87,7 +91,7 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       adsense(env.VITE_ADSENSE_CLIENT || undefined),
-      operatorInfo(env.VITE_OPERATOR_NAME?.trim(), env.VITE_CONTACT?.trim()),
+      operatorInfo(env.VITE_OPERATOR_NAME?.trim() || OPERATOR, env.VITE_CONTACT?.trim() || CONTACT),
     ],
     // ffmpeg.wasm はワーカーを new URL(..., import.meta.url) で生成するため事前バンドル対象から外す
     optimizeDeps: {
