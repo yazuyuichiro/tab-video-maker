@@ -391,7 +391,7 @@ export default function App() {
         />
         <AdSlot slot={import.meta.env.VITE_ADSENSE_SLOT} />
         <footer className="flex justify-center gap-4 pb-2 text-[11px] text-zinc-600">
-          <span>Tab動画メーカー v1.0</span>
+          <span>たぶめいかぁ v1.0</span>
           <a href="/privacy.html" className="hover:text-zinc-400">
             プライバシーポリシー・免責事項
           </a>

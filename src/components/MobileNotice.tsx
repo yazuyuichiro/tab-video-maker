@@ -36,7 +36,7 @@ export function MobileNotice() {
   };
   const share = async () => {
     if (canShare) {
-      await navigator.share({ title: 'Tab動画メーカー', url }).catch(() => {});
+      await navigator.share({ title: 'たぶめいかぁ', url }).catch(() => {});
       return;
     }
     await navigator.clipboard
@@ -58,7 +58,7 @@ export function MobileNotice() {
           パソコンで開くのがおすすめです
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-          Tab動画メーカーは、パソコンの Chrome / Edge 向けのアプリです。スマホでは画面が狭く操作しにくいうえ、動画の書き出しができないことがあります。
+          「たぶめいかぁ」は、パソコンの Chrome / Edge 向けのアプリです。スマホでは画面が狭く操作しにくいうえ、動画の書き出しができないことがあります。
         </p>
         <p className="mt-2 text-sm text-zinc-400">あとでパソコンから開けるように、URL を自分に送っておくと便利です。</p>
         <p className="mt-3 rounded-md bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 select-all">{url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</p>

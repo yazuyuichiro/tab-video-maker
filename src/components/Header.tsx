@@ -35,7 +35,7 @@ export function Header({ store, onExport, onHelp }: Props) {
             </g>
             <path d="M12 5v24" stroke="#ff2a2a" strokeWidth="3" />
           </svg>
-          <span className="font-display text-[15px] whitespace-nowrap">Tab動画メーカー</span>
+          <span className="font-display text-[15px] whitespace-nowrap">たぶめいかぁ</span>
         </div>
         <input
           className="w-40 min-w-0 rounded-md border border-(--field-line) bg-(--field) px-2 py-1 text-sm font-bold text-(--field-ink) placeholder:text-(--label)"
