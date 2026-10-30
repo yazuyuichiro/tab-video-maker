@@ -41,6 +41,7 @@ import { Preview, type PlayStart } from './components/Preview';
 import { Editor } from './components/Editor';
 import { ExportDialog } from './components/ExportDialog';
 import { HelpDialog } from './components/HelpDialog';
+import { MobileNotice } from './components/MobileNotice';
 import { AdSlot } from './components/AdSlot';
 
 /** 選択範囲（曲頭からの通し tick） */
@@ -398,6 +399,7 @@ export default function App() {
       </main>
       {exportOpen && <ExportDialog song={song} onClose={() => setExportOpen(false)} />}
       {helpOpen && <HelpDialog onClose={() => setHelpOpen(false)} />}
+      <MobileNotice />
     </div>
   );
 }
