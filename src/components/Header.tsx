@@ -6,6 +6,11 @@ import { exportSongJson, importSongJson } from '../lib/storage';
 import { setTimeSignature } from '../lib/songOps';
 import { Btn, Label, NumberField, ON_CLS } from './ui';
 
+const HOME_URL = 'https://yason-eng.com/';
+
+/** ホームは新しいタブで開く（作業中のこのタブはそのまま残る） */
+const openHome = () => window.open(HOME_URL, '_blank', 'noopener');
+
 const TIME_SIGNATURES = ['4/4', '3/4', '2/4', '6/8', '5/4', '12/8'];
 const selectCls = 'rounded-md border border-(--field-line) bg-(--field) px-1.5 py-1 text-sm text-(--field-ink)';
 
@@ -29,6 +34,22 @@ export function Header({ store, onExport, onHelp, onTranscribe }: Props) {
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-1.5">
         <div className="flex items-center gap-2">
           <span className="screws" aria-hidden />
+          <Btn onClick={openHome} className="!px-1.5" title="ホーム（yason-eng.com のトップページ）を新しいタブで開く">
+            <svg
+              viewBox="0 0 24 24"
+              width={16}
+              height={16}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M4 11l8-7 8 7" />
+              <path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5" />
+            </svg>
+          </Btn>
           <svg viewBox="0 0 32 32" className="h-6 w-6 shrink-0">
             <rect width="32" height="32" rx="7" fill="#1b1f24" />
             <g stroke="#fff" strokeWidth="1.5">
