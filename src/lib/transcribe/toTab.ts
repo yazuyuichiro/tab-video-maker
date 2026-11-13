@@ -59,6 +59,8 @@ export interface TabResult {
   song: Song;
   /** 後処理後の検出ノート数 */
   detected: number;
+  /** 同じ音高の再検出として統合したノートの数 */
+  merged: number;
   /** Tab に置いた音の数（同じマスに入った同じ音は1つにまとめる） */
   placed: number;
   review: ReviewItem[];
@@ -244,7 +246,7 @@ export function buildTab(raw: RawNote[], settings: TabSettings, base: Song, pres
   const gridTicks = Math.min((TPQ * 4) / settings.grid, bt);
   const mt = measureTicks(ts);
 
-  const { notes, harmonics } = cleanNotes(raw, settings.sensitivity, preset);
+  const { notes, harmonics, merged } = cleanNotes(raw, settings.sensitivity, preset);
   const offsetSec = notes.length ? notes[0].start : 0;
   const toGrid = gridMapper(offsetSec, bpm, gridTicks);
   const groups = groupNotes(notes, toGrid, gridTicks);
@@ -322,5 +324,5 @@ export function buildTab(raw: RawNote[], settings: TabSettings, base: Song, pres
       const { measure, cell } = locateTick(song, r.tick);
       return { ...r, measure: measure + 1, beat: `${cell.beat + 1}-${cell.sub + 1}` };
     });
-  return { song, detected: notes.length, placed, review: items, offsetSec };
+  return { song, detected: notes.length, merged, placed, review: items, offsetSec };
 }

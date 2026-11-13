@@ -19,11 +19,14 @@ export interface CleanResult {
   notes: RawNote[];
   /** 倍音の幻音とみなして除いた音（要確認一覧に出す） */
   harmonics: HarmonicDrop[];
+  /** 同じ音高の再検出として前のノートに統合した数（残ったノートに統合されたものだけ数える） */
+  merged: number;
 }
 
 /**
  * 検出ノートの後処理（値は preset.ts）。
- * 1. 同じ音高の分断ノートを結合（弾き直し＝発音らしさが高いものは別の音のまま残す）
+ * 1. 同じ音高で続けて検出されたノートを統合（間が mergeGapSec 以内で、後のノートの発音らしさが reattackOnset 未満のもの。
+ *    発音らしさが高いものは弾き直しとして別の音のまま残す）
  * 2. 感度（音の強さのしきい値）未満を除く
  * 3. 短いノートを除く
  * 4. 倍音の幻音を除く（findHarmonics。preset.harmonicFilter が true の時だけ）
@@ -37,6 +40,8 @@ export function cleanNotes(raw: RawNote[], sensitivity: number, preset: Transcri
     byPitch.set(n.pitch, list);
   }
   const merged: RawNote[] = [];
+  /** 統合先のノート → 統合したノートの数 */
+  const absorbed = new Map<RawNote, number>();
   for (const list of byPitch.values()) {
     list.sort((a, b) => a.start - b.start);
     const out: RawNote[] = [];
@@ -45,6 +50,7 @@ export function cleanNotes(raw: RawNote[], sensitivity: number, preset: Transcri
       if (prev && n.start - (prev.start + prev.dur) <= preset.mergeGapSec && n.onset < preset.reattackOnset) {
         prev.dur = Math.max(prev.start + prev.dur, n.start + n.dur) - prev.start;
         prev.amp = Math.max(prev.amp, n.amp);
+        absorbed.set(prev, (absorbed.get(prev) ?? 0) + 1);
         continue;
       }
       out.push({ ...n });
@@ -56,7 +62,8 @@ export function cleanNotes(raw: RawNote[], sensitivity: number, preset: Transcri
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
   const harmonics = preset.harmonicFilter ? findHarmonics(kept, preset) : [];
   const dropped = new Set(harmonics.map((h) => h.note));
-  return { notes: kept.filter((n) => !dropped.has(n)), harmonics };
+  const notes = kept.filter((n) => !dropped.has(n));
+  return { notes, harmonics, merged: notes.reduce((sum, n) => sum + (absorbed.get(n) ?? 0), 0) };
 }
 
 /**

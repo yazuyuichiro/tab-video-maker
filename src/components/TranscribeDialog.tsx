@@ -385,6 +385,10 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
                   <dd className="tabular-nums">
                     {result.detected}（Tab に置いた音 {result.placed}。同じマスに入った同じ音は1つにまとめています）
                   </dd>
+                  <dt className="text-zinc-400">統合した音</dt>
+                  <dd className="tabular-nums">
+                    {result.merged}（同じ高さで続けて検出された音のうち、鳴り始めが弱いものを、前の音の鳴り続けとみなして1つにまとめた数）
+                  </dd>
                   <dt className="text-zinc-400">要確認ノート数</dt>
                   <dd className={`tabular-nums ${result.review.length ? 'font-bold text-amber-300' : ''}`}>
                     {result.review.length}

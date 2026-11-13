@@ -24,9 +24,16 @@ export interface TranscribePreset {
   maxFreqHz: number | null;
 
   // ---- 後処理（cleanup.ts）
-  /** 同じ音高のノートの間がこれ以内なら、分断されたノートの候補（秒） */
+  /**
+   * 同じ音高のノートの間がこれ以内なら、鳴り続けている音の再検出（コードの鳴り続けによる再トリガーや分断）の候補（秒）。
+   * 重なっている時も含む
+   */
   mergeGapSec: number;
-  /** 鳴り始めの発音らしさがこれ以上なら、結合せずに弾き直しとみなす */
+  /**
+   * 候補のうち、後のノートの鳴り始めの発音らしさ（Basic Pitch の onset 出力。鳴り始めの前後1フレームの最大）が
+   * これ未満なら前のノートに統合し、これ以上なら弾き直しとして別の音のまま残す。
+   * ノートの強さ（amp）は弾き直しでも上がらない（テスト音源の E4 の連打で 0.83 → 0.83 / 0.79）ため、判定に使わない
+   */
   reattackOnset: number;
   /** これより短いノートは除く（秒） */
   minNoteSec: number;
@@ -56,8 +63,9 @@ export const GUITAR_PRESET: TranscribePreset = {
   minFreqHz: 82,
   maxFreqHz: 1319,
 
-  mergeGapSec: 0.06,
-  reattackOnset: 0.5,
+  // テスト音源の弾き直し（E4 の連打など）は、間隔 0ms・発音らしさ 0.88〜0.98
+  mergeGapSec: 0.1,
+  reattackOnset: 0.7,
   minNoteSec: 0.08,
   harmonicFilter: false,
   harmonicOnsetSec: 0.03,
