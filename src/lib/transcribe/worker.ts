@@ -39,23 +39,56 @@ self.addEventListener('unhandledrejection', (e) =>
   post({ type: 'error', message: (e.reason as Error)?.message || String(e.reason) || '音の解析中にエラーが起きました' }),
 );
 
+/**
+ * 計算方式を試す順番。WebGL（GPU。Worker では OffscreenCanvas）→ WebAssembly（CPU）→ JavaScript（CPU）。
+ * 方式の切り替えに成功しても、モデルの読み込みや試運転で失敗したら次の方式を試す
+ */
+const BACKENDS = ['webgl', 'wasm', 'cpu'] as const;
+
+async function switchBackend(name: (typeof BACKENDS)[number]) {
+  try {
+    if (name === 'wasm') await import('./wasmBackend');
+    return await tf.setBackend(name);
+  } catch {
+    return false;
+  }
+}
+
 async function load(modelUrl: string) {
   const t0 = performance.now();
-  // WebGL（Worker では OffscreenCanvas）が使えなければ tfjs が CPU に切り替える
-  await tf.ready();
-  const t1 = performance.now();
-  basicPitch = new BasicPitch(modelUrl);
-  await basicPitch.model;
-  const t2 = performance.now();
-  // シェーダーのコンパイルを先に済ませる（無音 2 秒を 1 回通す）
-  await infer(new Float32Array(SAMPLE_RATE * 2), () => {});
-  const t3 = performance.now();
-  post({
-    type: 'loaded',
-    backend: tf.getBackend(),
-    ms: t3 - t0,
-    detail: `ready ${Math.round(t1 - t0)}ms / model ${Math.round(t2 - t1)}ms / warmup ${Math.round(t3 - t2)}ms`,
-  });
+  const skipped: string[] = [];
+  let lastError: unknown = null;
+  for (const name of BACKENDS) {
+    if (!(await switchBackend(name))) {
+      skipped.push(name);
+      continue;
+    }
+    const t1 = performance.now();
+    const bp = new BasicPitch(modelUrl);
+    try {
+      await bp.model;
+      const t2 = performance.now();
+      basicPitch = bp;
+      // シェーダーのコンパイルなどを先に済ませる（無音 2 秒を 1 回通す）
+      await infer(new Float32Array(SAMPLE_RATE * 2), () => {});
+      const t3 = performance.now();
+      post({
+        type: 'loaded',
+        backend: name,
+        ms: t3 - t0,
+        detail:
+          (skipped.length ? `skipped ${skipped.join(',')} / ` : '') +
+          `backend ${Math.round(t1 - t0)}ms / model ${Math.round(t2 - t1)}ms / warmup ${Math.round(t3 - t2)}ms`,
+      });
+      return;
+    } catch (err) {
+      lastError = err;
+      basicPitch = null;
+      skipped.push(`${name}(${(err as Error)?.message ?? err})`);
+      await bp.model.then((m) => m.dispose()).catch(() => {});
+    }
+  }
+  throw lastError ?? new Error('この環境では音の解析ができません');
 }
 
 async function infer(samples: Float32Array, onProgress: (ratio: number) => void) {

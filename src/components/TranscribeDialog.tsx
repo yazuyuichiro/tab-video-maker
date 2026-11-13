@@ -169,7 +169,9 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
   const set = <K extends keyof TabSettings>(key: K, value: TabSettings[K]) => setSettings((s) => ({ ...s, [key]: value }));
   const file = phase.kind === 'idle' || phase.kind === 'error' ? null : phase.file;
   const duration = phase.kind === 'confirm-long' || phase.kind === 'running' || phase.kind === 'done' ? phase.duration : null;
-  const cpu = engine.kind === 'ready' && engine.info.backend !== 'webgl';
+  // 計算方式: webgl（GPU）/ wasm（CPU。GPU とほぼ同じ速さ）/ cpu（JavaScript。音源の長さの約3倍かかる）
+  const backend = engine.kind === 'ready' ? engine.info.backend : null;
+  const slow = backend === 'cpu';
   const lowCount = result?.review.filter((r) => r.reason !== 'no-string').length ?? 0;
   const noStringCount = result?.review.filter((r) => r.reason === 'no-string').length ?? 0;
 
@@ -261,7 +263,7 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
           <p className="mt-2 text-xs">
             <span className="text-zinc-500">解析エンジン: </span>
             {engine.kind === 'loading' && <span className="text-zinc-300">準備中…（初めての時は数十秒かかることがあります）</span>}
-            {engine.kind === 'ready' && <span className="text-emerald-300">準備できました{cpu ? '（CPU で計算）' : '（GPU で計算）'}</span>}
+            {engine.kind === 'ready' && <span className="text-emerald-300">準備できました{backend === 'webgl' ? '（GPU で計算）' : '（CPU で計算）'}</span>}
             {engine.kind === 'error' && (
               <span className="text-red-300">
                 準備できませんでした（{engine.message}）
@@ -271,9 +273,9 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
               </span>
             )}
           </p>
-          {cpu && (
+          {slow && (
             <p className="mt-1 text-xs text-amber-300">
-              この環境では GPU が使えないため、解析に時間がかかります（目安: 音源の長さの約3倍）。
+              この環境では高速な計算方式が使えないため、解析に時間がかかります（目安: 音源の長さの約3倍）。
             </p>
           )}
 
@@ -283,7 +285,7 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
             <div className="mt-3 rounded-lg border border-amber-500/60 bg-amber-950/30 p-3 text-xs">
               <p className="text-amber-200">
                 3分を超える音源です（{fmtDuration(phase.duration)}）。解析に時間がかかります
-                {cpu ? `（この環境では 約${Math.ceil((phase.duration * 3) / 60)}分以上）` : '（数十秒〜数分）'}
+                {slow ? `（この環境では 約${Math.ceil((phase.duration * 3) / 60)}分以上）` : '（数十秒〜数分）'}
                 。途中でキャンセルできます。
               </p>
               <div className="mt-2 flex justify-end gap-2">

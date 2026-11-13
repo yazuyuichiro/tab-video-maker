@@ -12,7 +12,7 @@ export class TranscribeCancelled extends Error {
 }
 
 export interface LoadInfo {
-  /** tfjs の計算方式（webgl / cpu） */
+  /** tfjs の計算方式（webgl / wasm / cpu） */
   backend: string;
   ms: number;
   /** 内訳（計測用） */

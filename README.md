@@ -63,7 +63,7 @@ npm run build     # 本番ビルド（dist/ を静的ホスティングに配置
   - **コードから作成**: コード名（`Am7` `FM7` `Dadd9` `C/G` など）から押さえ方の候補を出し、エディタの選択範囲に入力
   - **リズムの自動作成**: 8ビート / 16ビートカッティング / アルペジオ等のパターンで、選択範囲を含む小節に音符とピッキングを入力（小節のコードの押さえ方を使用）
 - **音源から下書き**（ヘッダーのボタン）: 音声ファイル（mp3 / wav / m4a 等）または動画ファイル（mp4 等。音声トラックだけ使用）から Tab の下書きを作る。処理はすべてブラウザ内で、音源はサーバーに送らない
-  - 音の検出は [Basic Pitch](https://github.com/spotify/basic-pitch)（© 2022 Spotify AB, Apache License 2.0）。入力はモノラル 22,050Hz に変換して Worker で推論
+  - 音の検出は [Basic Pitch](https://github.com/spotify/basic-pitch)（© 2022 Spotify AB, Apache License 2.0）。入力はモノラル 22,050Hz に変換して Worker で推論。計算は GPU（WebGL）→ WebAssembly → JavaScript の順に、使える方式で行う
   - 後処理: 同じ音高の分断ノートの結合 → 感度（音の強さのしきい値）→ 80ms 未満の除去
   - 設定: BPM / グリッド（8分・16分）/ 感度 / カポ / フレット上限。最初に検出した音を 1 小節目の 1 拍目にし、拍子は今の曲のものを使う
   - 弦・フレットは標準チューニングで、同時音は別の弦に置き、フレーズ全体の移動量が最小になるよう動的計画法で選ぶ。音域外の音はオクターブを移して配置、弦が足りない音は配置せず、どちらも「要確認」として一覧に出す
@@ -124,6 +124,7 @@ src/
     transcribe/   音源から下書き
       engine.ts   音声のデコード（モノラル 22,050Hz）と推論 Worker の操作
       worker.ts   Basic Pitch の推論とノート抽出（Worker）
+      wasmBackend.ts  GPU が使えない時の計算方式（WebAssembly。その時だけ読み込む）
       cleanup.ts  後処理（分断ノートの結合・感度・短いノートの除去）
       toTab.ts    クオンタイズ・弦とフレットの割り当て → 曲データ
   state/useSongStore.ts   曲データ + 元に戻す/やり直し
@@ -138,8 +139,12 @@ public/models/basic-pitch/   Basic Pitch のモデルと LICENSE（自ドメイ�
 
 - モデル（`model.json` と `group1-shard1of1.bin`、約0.9MB）と `LICENSE.txt` は、`node_modules/@spotify/basic-pitch/model/` と同パッケージの `LICENSE` をコピーしたもの。`@spotify/basic-pitch` を更新したらコピーし直す
 - tfjs は `@spotify/basic-pitch` が使う 3.x だけを使う（二重に入れない）。`@tensorflow/tfjs` を package.json に足さない
+- WebAssembly 版（`@tensorflow/tfjs-backend-wasm`）は tfjs-core と同じ版（3.21.0）に固定している。版がずれると動かないので、basic-pitch の更新で tfjs が変わったら合わせる
+- 計算方式は worker.ts で WebGL → WebAssembly → JavaScript の順に試し、モデルの読み込みか試運転で失敗したら次の方式に移る。WebAssembly 版は WebGL が使えない時だけ読み込む
+- wasm ファイル（3種、各 300KB 前後）は wasmBackend.ts の `?url` でビルドに含め、自ドメインの `/assets/` から配信する（CDN は使わない）。ページがクロスオリジン分離（COOP/COEP）されていないので、スレッド版は使われず SIMD 版になる
 - tfjs 3.x は Worker の中で `window` を参照して止まる不具合があるため、worker.ts で `setTimeoutCustom` を普通の `setTimeout` に置き換えている
+- tfjs 3.21 の WebAssembly 版は、型を省略した `Fill`（Basic Pitch の `tf.signal.frame` が末尾のゼロ埋めで使う）で止まる不具合があるため、wasmBackend.ts で値から型を補うよう包み直している
 - Basic Pitch の `outputToNotesPoly` は音源の長さの2乗で遅くなるため、worker.ts で 10 秒ずつ（前後 2 秒の余白付き）に分けて処理している
-- 計測の目安（AMD Radeon 内蔵 GPU / Chrome）: 初回の準備（シェーダーのコンパイル）約13秒・2回目以降約1秒、推論は音源の長さの約0.1倍。GPU が使えない環境（CPU）は音源の長さの約2.6倍
+- 計測の目安（AMD Radeon 内蔵 GPU / Chrome）: GPU は初回の準備（シェーダーのコンパイル）約13秒・2回目以降約1秒、推論は音源の長さの約0.1〜0.17倍。GPU が使えない環境は、WebAssembly で準備約0.7秒・音源の長さの約0.17倍、JavaScript だけだと約2.6倍。3つの方式の検出結果は同じ
 
 MP4 書き出しは、フレームを Canvas に描画 → JS で YUV420 に変換 → 約64MBごとに libx264 でエンコード → 連結して MP4 化、の流れで、長い曲でもメモリ使用量が一定です。
