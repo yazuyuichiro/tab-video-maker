@@ -6,21 +6,14 @@
  * - キャンセルは本体側で Worker を終了する（evaluateModel には途中で止める仕組みが無いため）
  */
 import * as tf from '@tensorflow/tfjs';
-import { BasicPitch, noteFramesToTime, outputToNotesPoly } from '@spotify/basic-pitch';
-import type { RawNote, WorkerRequest, WorkerResponse } from './protocol';
+import { BasicPitch } from '@spotify/basic-pitch';
+import { extractNotes, pitchRange } from './extract';
+import { GUITAR_PRESET } from './preset';
+import type { WorkerRequest, WorkerResponse } from './protocol';
 
 declare const self: DedicatedWorkerGlobalScope;
 
 const SAMPLE_RATE = 22050;
-/** Basic Pitch の出力の最低音（ピアノの最低音 A0 = MIDI 21） */
-const MIDI_OFFSET = 21;
-/** 後処理で分断ノートを結合してから短いノートを除くため、ここでは短めに残す（約35ms） */
-const MIN_NOTE_FRAMES = 3;
-/** Basic Pitch の出力は 1 秒あたり約 86 フレーム */
-const FPS = Math.floor(SAMPLE_RATE / 256);
-/** ノートの抽出を区切る長さと、前後に付ける余白（フレーム） */
-const CHUNK_FRAMES = 10 * FPS;
-const PAD_FRAMES = 2 * FPS;
 /** 進捗のうち推論に割り当てる割合（残りはノートの抽出） */
 const INFER_SHARE = 0.9;
 
@@ -111,51 +104,17 @@ async function infer(samples: Float32Array, onProgress: (ratio: number) => void)
   return { frames, onsets };
 }
 
-/**
- * ノートを抽出する。outputToNotesPoly は音源の長さの2乗で遅くなる（melodia trick が毎回全体から最大値を探す）ため、
- * 前後に余白を付けた区間ごとに処理し、鳴り始めが区間の中にあるノートだけを採用する。
- */
-function extractNotes(frames: number[][], onsets: number[][], onProgress: (ratio: number) => void) {
-  const n = frames.length;
-  const events: ReturnType<typeof outputToNotesPoly> = [];
-  for (let start = 0; start < n; start += CHUNK_FRAMES) {
-    const end = Math.min(n, start + CHUNK_FRAMES);
-    const from = Math.max(0, start - PAD_FRAMES);
-    const to = Math.min(n, end + PAD_FRAMES);
-    const part = outputToNotesPoly(frames.slice(from, to), onsets.slice(from, to), 0.5, 0.3, MIN_NOTE_FRAMES);
-    for (const e of part) {
-      const s = e.startFrame + from;
-      if (s >= start && s < end) events.push({ ...e, startFrame: s });
-    }
-    onProgress(end / n);
-  }
-  return events;
-}
-
 async function run(samples: Float32Array) {
   const t0 = performance.now();
   const { frames, onsets } = await infer(samples, (ratio) => post({ type: 'progress', ratio: ratio * INFER_SHARE }));
   const tInfer = performance.now();
-  const events = extractNotes(frames, onsets, (r) => post({ type: 'progress', ratio: INFER_SHARE + (1 - INFER_SHARE) * r }));
+  const p = GUITAR_PRESET;
+  const notes = extractNotes(frames, onsets, p, (r) => post({ type: 'progress', ratio: INFER_SHARE + (1 - INFER_SHARE) * r }));
   const tNotes = performance.now();
-  const timed = noteFramesToTime(events);
-  const notes: RawNote[] = events.map((e, i) => {
-    // 鳴り始めのフレーム（前後1フレーム）での発音らしさ。分断ノートの結合の判定に使う
-    const bin = e.pitchMidi - MIDI_OFFSET;
-    let onset = 0;
-    for (let f = Math.max(0, e.startFrame - 1); f <= Math.min(onsets.length - 1, e.startFrame + 1); f++) {
-      onset = Math.max(onset, onsets[f]?.[bin] ?? 0);
-    }
-    return {
-      start: timed[i].startTimeSeconds,
-      dur: timed[i].durationSeconds,
-      pitch: e.pitchMidi,
-      amp: e.amplitude,
-      onset,
-    };
-  });
-  notes.sort((a, b) => a.start - b.start || a.pitch - b.pitch);
-  const detail = `infer ${Math.round(tInfer - t0)}ms / notes ${Math.round(tNotes - tInfer)}ms / tensors ${tf.memory().numTensors}`;
+  const { lo, hi } = pitchRange(p);
+  const detail =
+    `infer ${Math.round(tInfer - t0)}ms / notes ${Math.round(tNotes - tInfer)}ms / tensors ${tf.memory().numTensors}` +
+    ` / onset ${p.onsetThresh} frame ${p.frameThresh} min ${p.minNoteFrames}f midi ${lo}-${hi}`;
   post({ type: 'done', notes, ms: performance.now() - t0, detail });
 }
 

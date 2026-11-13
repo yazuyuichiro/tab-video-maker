@@ -8,6 +8,7 @@ import { createMeasure, createNote } from '../songOps';
 import { normalizeSong } from '../storage';
 import { beatTicks, defaultSegments, locateTick, measureTicks } from '../timing';
 import { cleanNotes } from './cleanup';
+import { GUITAR_PRESET, type TranscribePreset } from './preset';
 import type { RawNote } from './protocol';
 
 export type Grid = 8 | 16;
@@ -28,12 +29,13 @@ export const CAPO_MAX = 12;
 export const FRET_LIMIT_MIN = 5;
 export const FRET_LIMIT_MAX = 24;
 
-export type ReviewReason = 'low' | 'high' | 'no-string';
+export type ReviewReason = 'low' | 'high' | 'no-string' | 'harmonic';
 
 export const REVIEW_REASON_LABEL: Record<ReviewReason, string> = {
   low: '音域より低いため、オクターブ上げて配置',
   high: '音域より高いため、オクターブ下げて配置',
   'no-string': '同時に鳴る音に弦が足りないため、配置していません',
+  harmonic: '倍音の誤検出とみなして除外',
 };
 
 export interface ReviewItem {
@@ -48,6 +50,8 @@ export interface ReviewItem {
   /** オクターブを移して配置した音（未配置は null） */
   placed: number | null;
   reason: ReviewReason;
+  /** 倍音の元とみなした低い音（MIDI。reason が harmonic の時だけ） */
+  harmonicOf?: number;
 }
 
 export interface TabResult {
@@ -84,9 +88,13 @@ interface Group {
   pitches: Map<number, number>;
 }
 
-function groupNotes(notes: RawNote[], offset: number, bpm: number, gridTicks: number): Group[] {
+/** 音源の中の時刻（秒）→ いちばん近いマスの通し tick（offset 秒を 1 小節目の頭にする） */
+function gridMapper(offset: number, bpm: number, gridTicks: number) {
   const secPerTick = 60 / bpm / TPQ;
-  const toGrid = (sec: number) => Math.max(0, Math.round((sec - offset) / secPerTick / gridTicks) * gridTicks);
+  return (sec: number) => Math.max(0, Math.round((sec - offset) / secPerTick / gridTicks) * gridTicks);
+}
+
+function groupNotes(notes: RawNote[], toGrid: (sec: number) => number, gridTicks: number): Group[] {
   const byTick = new Map<number, Group>();
   let i = 0;
   while (i < notes.length) {
@@ -226,7 +234,7 @@ function assign(cands: Candidate[][], ticks: number[], beat: number): Candidate[
 // 曲データへの変換
 // ---------------------------------------------------------------------------
 
-export function buildTab(raw: RawNote[], settings: TabSettings, base: Song): TabResult {
+export function buildTab(raw: RawNote[], settings: TabSettings, base: Song, preset: TranscribePreset = GUITAR_PRESET): TabResult {
   const ts = base.timeSignature;
   const bpm = Math.round(Math.max(BPM_MIN, Math.min(BPM_MAX, settings.bpm)));
   const capo = Math.max(0, Math.min(CAPO_MAX, Math.round(settings.capo)));
@@ -236,14 +244,23 @@ export function buildTab(raw: RawNote[], settings: TabSettings, base: Song): Tab
   const gridTicks = Math.min((TPQ * 4) / settings.grid, bt);
   const mt = measureTicks(ts);
 
-  const notes = cleanNotes(raw, settings.sensitivity);
+  const { notes, harmonics } = cleanNotes(raw, settings.sensitivity, preset);
   const offsetSec = notes.length ? notes[0].start : 0;
-  const groups = groupNotes(notes, offsetSec, bpm, gridTicks);
+  const toGrid = gridMapper(offsetSec, bpm, gridTicks);
+  const groups = groupNotes(notes, toGrid, gridTicks);
+
+  // 倍音の幻音とみなして除いた音（要確認）
+  const review: Omit<ReviewItem, 'measure' | 'beat'>[] = harmonics.map((h) => ({
+    tick: toGrid(h.note.start),
+    pitch: h.note.pitch,
+    placed: null,
+    reason: 'harmonic',
+    harmonicOf: h.base.pitch,
+  }));
 
   // 音域の外の音はオクターブを移す（要確認）
   const lowest = OPEN_PITCH['6'] + capo;
   const highest = OPEN_PITCH['1'] + capo + maxFret;
-  const review: Omit<ReviewItem, 'measure' | 'beat'>[] = [];
   const groupPitches = groups.map((g) => {
     const out = new Map<number, number>();
     for (const [pitch, amp] of g.pitches) {

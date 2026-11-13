@@ -3,6 +3,7 @@ import type { Song } from '../types';
 import { decodeToMono, TranscribeCancelled, TranscribeEngine, type LoadInfo } from '../lib/transcribe/engine';
 import type { RawNote } from '../lib/transcribe/protocol';
 import { ampThreshold, SENSITIVITY_MAX, SENSITIVITY_MIN } from '../lib/transcribe/cleanup';
+import { GUITAR_PRESET } from '../lib/transcribe/preset';
 import {
   BPM_MAX,
   BPM_MIN,
@@ -172,8 +173,10 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
   // 計算方式: webgl（GPU）/ wasm（CPU。GPU とほぼ同じ速さ）/ cpu（JavaScript。音源の長さの約3倍かかる）
   const backend = engine.kind === 'ready' ? engine.info.backend : null;
   const slow = backend === 'cpu';
-  const lowCount = result?.review.filter((r) => r.reason !== 'no-string').length ?? 0;
-  const noStringCount = result?.review.filter((r) => r.reason === 'no-string').length ?? 0;
+  const countReview = (...reasons: string[]) => result?.review.filter((r) => reasons.includes(r.reason)).length ?? 0;
+  const octaveCount = countReview('low', 'high');
+  const noStringCount = countReview('no-string');
+  const harmonicCount = countReview('harmonic');
 
   return (
     <Modal
@@ -385,7 +388,10 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
                   <dt className="text-zinc-400">要確認ノート数</dt>
                   <dd className={`tabular-nums ${result.review.length ? 'font-bold text-amber-300' : ''}`}>
                     {result.review.length}
-                    {result.review.length > 0 && `（オクターブを移して配置 ${lowCount}・弦が足りず未配置 ${noStringCount}）`}
+                    {result.review.length > 0 &&
+                      `（オクターブを移して配置 ${octaveCount}・弦が足りず未配置 ${noStringCount}${
+                        GUITAR_PRESET.harmonicFilter ? `・倍音とみなして除外 ${harmonicCount}` : ''
+                      }）`}
                   </dd>
                   <dt className="text-zinc-400">小節数</dt>
                   <dd className="tabular-nums">
@@ -420,7 +426,10 @@ export function TranscribeDialog({ song, onApply, onClose }: Props) {
                             {pitchName(r.pitch)}
                             {r.placed !== null && <span className="text-zinc-500"> → {pitchName(r.placed)}</span>}
                           </td>
-                          <td className="px-2 py-1">{REVIEW_REASON_LABEL[r.reason]}</td>
+                          <td className="px-2 py-1">
+                            {REVIEW_REASON_LABEL[r.reason]}
+                            {r.harmonicOf !== undefined && <span className="text-zinc-500">（{pitchName(r.harmonicOf)} の倍音）</span>}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
