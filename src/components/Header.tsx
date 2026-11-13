@@ -13,9 +13,10 @@ interface Props {
   store: SongStore;
   onExport: () => void;
   onHelp: () => void;
+  onTranscribe: () => void;
 }
 
-export function Header({ store, onExport, onHelp }: Props) {
+export function Header({ store, onExport, onHelp, onTranscribe }: Props) {
   const { song, update } = store;
   const fileRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof Song>(key: K, value: Song[K]) =>
@@ -115,6 +116,9 @@ export function Header({ store, onExport, onHelp }: Props) {
           </Btn>
           <Btn onClick={onHelp} title="使い方（保存のしかた・基本の流れ・キー操作）">
             ？ 使い方
+          </Btn>
+          <Btn onClick={onTranscribe} title="音声・動画ファイルから Tab の下書きを自動で作ります（ブラウザ内だけで処理）">
+            音源から下書き
           </Btn>
           <Btn onClick={() => fileRef.current?.click()} title="「保存」でダウンロードした曲データのファイル（.json）を開きます">
             読込

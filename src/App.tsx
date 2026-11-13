@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Nuance, StringNo, StringSel } from './types';
 import { TPQ } from './types';
 import { useSongStore } from './state/useSongStore';
@@ -41,6 +41,9 @@ import { Preview, type PlayStart } from './components/Preview';
 import { Editor } from './components/Editor';
 import { ExportDialog } from './components/ExportDialog';
 import { HelpDialog } from './components/HelpDialog';
+
+// 音源から下書き: 使う時だけ読み込む（初回表示を重くしない）
+const TranscribeDialog = lazy(() => import('./components/TranscribeDialog').then((m) => ({ default: m.TranscribeDialog })));
 import { MobileNotice } from './components/MobileNotice';
 import { AdSlot } from './components/AdSlot';
 
@@ -101,6 +104,7 @@ export default function App() {
   const [playStart, setPlayStart] = useState<PlayStart>({ t: 0, id: 0 });
   const [exportOpen, setExportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [transcribeOpen, setTranscribeOpen] = useState(false);
   const timeRef = useRef(0);
   const digitBuf = useRef<{ t: number; v: number } | null>(null);
   /** Shift+↑↓ で弦を範囲選択する時の起点と先端 */
@@ -360,6 +364,10 @@ export default function App() {
           if (playing) stop();
           setHelpOpen(true);
         }}
+        onTranscribe={() => {
+          if (playing) stop();
+          setTranscribeOpen(true);
+        }}
       />
       <main className="mx-auto w-full max-w-[1600px] space-y-2 px-4 py-2">
         <Preview
@@ -399,6 +407,18 @@ export default function App() {
       </main>
       {exportOpen && <ExportDialog song={song} onClose={() => setExportOpen(false)} />}
       {helpOpen && <HelpDialog onClose={() => setHelpOpen(false)} />}
+      {transcribeOpen && (
+        <Suspense fallback={null}>
+          <TranscribeDialog
+            song={song}
+            onApply={(s) => {
+              store.replace(s);
+              setMeasureIdx(0);
+            }}
+            onClose={() => setTranscribeOpen(false)}
+          />
+        </Suspense>
+      )}
       <MobileNotice />
     </div>
   );

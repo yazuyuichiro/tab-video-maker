@@ -16,6 +16,7 @@
     "@fontsource/biz-udgothic": "^5.3.0",
     "@fontsource/biz-udpgothic": "^5.3.0",
     "@fontsource/m-plus-rounded-1c": "^5.3.0",
+    "@spotify/basic-pitch": "^1.0.1",
     "immer": "^11.1.21",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
