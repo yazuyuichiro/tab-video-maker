@@ -44,6 +44,11 @@ import { HelpDialog } from './components/HelpDialog';
 
 // 音源から下書き: 使う時だけ読み込む（初回表示を重くしない）
 const TranscribeDialog = lazy(() => import('./components/TranscribeDialog').then((m) => ({ default: m.TranscribeDialog })));
+/**
+ * 音源から下書きを画面に出すか。2026-11-14 に、精度が実用に届かないため一旦非公開にした（ヘッダーのボタンを出さない）。
+ * コードとモデルは残してある。再開する時は true に戻す（経緯と値は README の「音源から下書き（保守メモ）」と preset.ts）
+ */
+const TRANSCRIBE_ENABLED = false;
 import { MobileNotice } from './components/MobileNotice';
 import { AdSlot } from './components/AdSlot';
 
@@ -364,10 +369,14 @@ export default function App() {
           if (playing) stop();
           setHelpOpen(true);
         }}
-        onTranscribe={() => {
-          if (playing) stop();
-          setTranscribeOpen(true);
-        }}
+        onTranscribe={
+          TRANSCRIBE_ENABLED
+            ? () => {
+                if (playing) stop();
+                setTranscribeOpen(true);
+              }
+            : undefined
+        }
       />
       <main className="mx-auto w-full max-w-[1600px] space-y-2 px-4 py-2">
         <Preview
